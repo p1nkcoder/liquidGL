@@ -1,0 +1,114 @@
+// Native Android adaptation of liquidGL.
+// Original project: Copyright (c) NaughtyDuk, MIT License.
+
+uniform shader content;
+
+uniform float2 uLayerSize;
+uniform float2 uLensOrigin;
+uniform float2 uLensSize;
+uniform float2 uSourceSize;
+uniform float uRefraction;
+uniform float uAberration;
+uniform float uBevelDepth;
+uniform float uBevelWidth;
+uniform float uFrost;
+uniform float uRadius;
+uniform float uMagnification;
+uniform float uTime;
+uniform float uSpecular;
+uniform float4 uTint;
+
+float roundedBoxDistance(float2 point, float2 halfSize, float radius) {
+    return length(max(abs(point) - halfSize + radius, 0.0)) - radius;
+}
+
+float2 cornerNormal(float2 point, float2 halfSize, float radius, float2 fallback) {
+    float2 corner = abs(point) - halfSize + radius;
+    float2 outside = max(corner, 0.0);
+    float outsideLength = length(outside);
+    if (outsideLength <= 0.0001) return fallback;
+
+    float weight = smoothstep(0.0, max(radius * 0.5, 1.0), min(outside.x, outside.y));
+    if (weight <= 0.0) return fallback;
+
+    float2 signValue = float2(point.x < 0.0 ? -1.0 : 1.0, point.y < 0.0 ? -1.0 : 1.0);
+    return normalize(mix(fallback, signValue * (outside / outsideLength), weight));
+}
+
+float randomValue(float2 seed) {
+    return fract(sin(dot(seed, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+half4 main(float2 coordinate) {
+    float2 lensCoordinate = coordinate - uLensOrigin;
+    float2 uv = lensCoordinate / max(uLensSize, float2(1.0));
+    float2 centeredPx = lensCoordinate - 0.5 * uLensSize;
+    float2 halfSize = 0.5 * uLensSize;
+
+    float signedDistance = roundedBoxDistance(centeredPx, halfSize, uRadius);
+    float insideDistance = -signedDistance;
+    float bevelPx = max(uBevelWidth * min(uLensSize.x, uLensSize.y), 1.0);
+    float edge = 1.0 - smoothstep(0.0, bevelPx, insideDistance);
+
+    float2 normalizedPoint = uv - 0.5;
+    normalizedPoint.x *= uLensSize.x / max(uLensSize.y, 1.0);
+    float normalizedLength = length(normalizedPoint);
+    float2 fallbackNormal = normalizedLength > 0.0001
+        ? normalizedPoint / normalizedLength
+        : float2(0.0, 1.0);
+    float2 refractionDirection = cornerNormal(centeredPx, halfSize, uRadius, fallbackNormal);
+    float centerBlend = smoothstep(0.15, 0.45, normalizedLength);
+
+    float sourceScale = min(uSourceSize.x, uSourceSize.y);
+    float displacement = (edge * uRefraction + pow(edge, 10.0) * uBevelDepth) * sourceScale;
+    float2 offsetPx = refractionDirection * displacement * centerBlend;
+
+    float2 lensCenter = uLensOrigin + 0.5 * uLensSize;
+    float2 sampleCoordinate = lensCenter + (coordinate - lensCenter) / uMagnification + offsetPx;
+    sampleCoordinate = clamp(sampleCoordinate, float2(0.0), uLayerSize - float2(1.0));
+
+    half4 baseColor = content.eval(coordinate);
+    half4 refractedColor;
+
+    if (uFrost > 0.0) {
+        half4 sum = half4(0.0);
+        const int samples = 16;
+        for (int index = 0; index < samples; ++index) {
+            float angle = randomValue(uv + float(index)) * 6.283185;
+            float distanceValue = sqrt(randomValue(uv - float(index))) * uFrost * 4.0;
+            float2 blurOffset = float2(cos(angle), sin(angle)) * distanceValue;
+            sum += content.eval(clamp(sampleCoordinate + blurOffset, float2(0.0), uLayerSize - float2(1.0)));
+        }
+        refractedColor = sum / float(samples);
+    } else {
+        refractedColor = content.eval(sampleCoordinate);
+        refractedColor += content.eval(clamp(sampleCoordinate + float2(1.0, 0.0), float2(0.0), uLayerSize - float2(1.0)));
+        refractedColor += content.eval(clamp(sampleCoordinate - float2(1.0, 0.0), float2(0.0), uLayerSize - float2(1.0)));
+        refractedColor += content.eval(clamp(sampleCoordinate + float2(0.0, 1.0), float2(0.0), uLayerSize - float2(1.0)));
+        refractedColor += content.eval(clamp(sampleCoordinate - float2(0.0, 1.0), float2(0.0), uLayerSize - float2(1.0)));
+        refractedColor /= 5.0;
+    }
+
+    if (uAberration > 0.0) {
+        float2 chroma = offsetPx * uAberration;
+        refractedColor.r = content.eval(clamp(sampleCoordinate - chroma, float2(0.0), uLayerSize - float2(1.0))).r;
+        refractedColor.b = content.eval(clamp(sampleCoordinate + chroma, float2(0.0), uLayerSize - float2(1.0))).b;
+    }
+
+    if (refractedColor.a < 0.1) {
+        refractedColor = baseColor;
+    }
+
+    refractedColor.rgb = mix(refractedColor.rgb, half3(uTint.rgb) * refractedColor.a, half(uTint.a));
+
+    if (uSpecular > 0.5) {
+        float2 lightOne = float2(sin(uTime * 0.2), cos(uTime * 0.3)) * 0.6 + 0.5;
+        float2 lightTwo = float2(sin(uTime * -0.4 + 1.5), cos(uTime * 0.25 - 0.5)) * 0.6 + 0.5;
+        float highlight = smoothstep(0.4, 0.0, distance(uv, lightOne)) * 0.1;
+        highlight += smoothstep(0.5, 0.0, distance(uv, lightTwo)) * 0.08;
+        refractedColor.rgb += half3(highlight * refractedColor.a);
+    }
+
+    float mask = 1.0 - smoothstep(-1.0, 1.0, signedDistance);
+    return refractedColor * half(mask);
+}

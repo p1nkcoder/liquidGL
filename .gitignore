@@ -3,3 +3,13 @@
 */.DS_Store
 **/.DS_Store 
 *.xmp
+
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+captures/
+externalNativeBuild/
+.cxx/

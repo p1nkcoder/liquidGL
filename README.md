@@ -1,5 +1,10 @@
 # liquidGL – Ultra-light glassmorphism for the web
 
+> [!TIP]
+> Building a native Kotlin/Jetpack Compose app? Use the new
+> [`liquidglass-compose`](ANDROID_KOTLIN.md) Android library. It uses native Compose drawing and
+> Android `RuntimeShader`—there is no JavaScript or WebView.
+
 <a href="https://liquidgl.naughtyduk.com"><img src="/assets/liquidGlass-promo.gif" alt="liquidGL" style="width: 100%"/></a>
 
 **v2.0.2**

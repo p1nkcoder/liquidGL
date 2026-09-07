@@ -1,0 +1,4 @@
+jdk:
+  - openjdk17
+install:
+  - ./gradlew :liquidglass-compose:build :liquidglass-compose:publishToMavenLocal
