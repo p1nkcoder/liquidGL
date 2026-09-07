@@ -1,9 +1,9 @@
 # liquidGL Android/Kotlin Port Plan
 
-Status: proposed  
-Source baseline: `naughtyduk/liquidGL` v2.0.2 at `b79845de77299c3fad3f05c470997719d31fbc9c`  
-Primary target: native Kotlin and Jetpack Compose  
-License: MIT; retain the upstream copyright and license in derived source and artifacts
+- Status: proposed
+- Source baseline: `naughtyduk/liquidGL` v2.0.2 at `b79845de77299c3fad3f05c470997719d31fbc9c`
+- Primary target: native Kotlin and Jetpack Compose
+- License: MIT; retain the upstream copyright and license in derived source and artifacts
 
 ## 1. Outcome
 
