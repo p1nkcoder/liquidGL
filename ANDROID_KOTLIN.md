@@ -25,7 +25,7 @@ dependencyResolutionManagement {
         mavenCentral()
         maven {
             url = uri("https://jitpack.io")
-            content { includeGroup("com.github.p1nkcoder.liquidGL") }
+            content { includeGroup("com.github.p1nkcoder") }
         }
     }
 }
@@ -35,7 +35,7 @@ Then add the library to the app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.p1nkcoder.liquidGL:liquidglass-compose:android-v0.1.0-alpha01")
+    implementation("com.github.p1nkcoder:liquidGL:android-v0.1.0-alpha01")
 }
 ```
 
