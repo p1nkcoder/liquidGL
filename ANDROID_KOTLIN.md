@@ -35,9 +35,11 @@ Then add the library to the app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.p1nkcoder:liquidGL:android-v0.1.0-alpha01")
+    implementation("com.github.p1nkcoder:liquidGL:cf35209")
 }
 ```
+
+`cf35209` is the immutable, remotely verified build for the first Android alpha.
 
 ## Use it in Compose
 
